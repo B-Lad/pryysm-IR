@@ -175,3 +175,77 @@ export class FANUCRobotController extends RobotController {
     return new Promise(resolve => setTimeout(resolve, Math.min(timeout, 2000)));
   }
 }
+
+  // SLA/Dental Automation specific implementations
+  
+  async removeBuildPlatform(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Removing build platform from SLA printer ${printerId}`);
+    
+    const command: RobotCommand = {
+      command: 'BUILD_PLATFORM_REMOVAL',
+      parameters: { printerId, ...parameters },
+      timeout: 30000
+    };
+    return this.executeCommand(command);
+  }
+
+  async openDoor(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Opening door for printer ${printerId}`);
+    const command: RobotCommand = { command: 'DOOR_OPEN', parameters: { printerId, ...parameters }, timeout: 15000 };
+    return this.executeCommand(command);
+  }
+
+  async closeDoor(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Closing door for printer ${printerId}`);
+    const command: RobotCommand = { command: 'DOOR_CLOSE', parameters: { printerId, ...parameters }, timeout: 15000 };
+    return this.executeCommand(command);
+  }
+
+  async transferBasket(fromStation: string, toStation: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Transferring basket from ${fromStation} to ${toStation}`);
+    const command: RobotCommand = { command: 'BASKET_TRANSFER', parameters: { fromStation, toStation, ...parameters }, timeout: 45000 };
+    return this.executeCommand(command);
+  }
+
+  async loadWash(stationId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Loading basket into wash station ${stationId}`);
+    const command: RobotCommand = { command: 'WASH_LOAD', parameters: { stationId, ...parameters }, timeout: 30000 };
+    return this.executeCommand(command);
+  }
+
+  async unloadWash(stationId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Unloading basket from wash station ${stationId}`);
+    const command: RobotCommand = { command: 'WASH_UNLOAD', parameters: { stationId, ...parameters }, timeout: 20000 };
+    return this.executeCommand(command);
+  }
+
+  async loadCure(stationId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Loading basket into cure station ${stationId}`);
+    const command: RobotCommand = { command: 'CURE_LOAD', parameters: { stationId, ...parameters }, timeout: 30000 };
+    return this.executeCommand(command);
+  }
+
+  async unloadCure(stationId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Unloading basket from cure station ${stationId}`);
+    const command: RobotCommand = { command: 'CURE_UNLOAD', parameters: { stationId, ...parameters }, timeout: 20000 };
+    return this.executeCommand(command);
+  }
+
+  async inspectDentalModels(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Inspecting dental models from printer ${printerId}`);
+    const command: RobotCommand = { command: 'DENTAL_MODEL_INSPECTION', parameters: { printerId, ...parameters }, timeout: 60000 };
+    return this.executeCommand(command);
+  }
+
+  async cleanPlatform(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Cleaning build platform for printer ${printerId}`);
+    const command: RobotCommand = { command: 'PLATFORM_CLEANING', parameters: { printerId, ...parameters }, timeout: 45000 };
+    return this.executeCommand(command);
+  }
+
+  async refillResin(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[FANUC] Refilling resin for printer ${printerId}`);
+    const command: RobotCommand = { command: 'RESIN_REFILL', parameters: { printerId, ...parameters }, timeout: 120000 };
+    return this.executeCommand(command);
+  }
+}

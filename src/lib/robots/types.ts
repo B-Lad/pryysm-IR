@@ -24,13 +24,17 @@ export interface RobotConfig {
   isActive: boolean;
   maxPayload?: number;
   reach?: number;
+  // SLA/Dental Automation specific
+  supportedPrinters?: string[]; // e.g., ['Formlabs Form 4L', 'Formlabs Form 4BL']
+  hasCustomGripper?: boolean;
+  gripperType?: 'BUILD_PLATFORM' | 'BASKET' | 'UNIVERSAL';
 }
 
 export interface RobotTask {
   id: string;
   robotId: string;
   printerId: string;
-  taskType: 'PART_REMOVAL' | 'BED_PREP' | 'INSPECTION' | 'MATERIAL_LOAD';
+  taskType: RobotTaskType;
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   priority: number;
   createdAt: Date;
@@ -39,6 +43,25 @@ export interface RobotTask {
   parameters?: Record<string, any>;
   errorMessage?: string;
 }
+
+export type RobotTaskType = 
+  // Generic FDM tasks
+  | 'PART_REMOVAL' 
+  | 'BED_PREP' 
+  | 'INSPECTION' 
+  | 'MATERIAL_LOAD'
+  // SLA/Dental specific tasks
+  | 'BUILD_PLATFORM_REMOVAL'
+  | 'DOOR_OPEN'
+  | 'DOOR_CLOSE'
+  | 'BASKET_TRANSFER'
+  | 'WASH_LOAD'
+  | 'WASH_UNLOAD'
+  | 'CURE_LOAD'
+  | 'CURE_UNLOAD'
+  | 'DENTAL_MODEL_INSPECTION'
+  | 'PLATFORM_CLEANING'
+  | 'RESIN_REFILL';
 
 export interface RobotStatus {
   robotId: string;

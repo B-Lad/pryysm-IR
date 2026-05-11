@@ -25,10 +25,76 @@ export const generateInitialPrinters = (): Omit<Printer, 'completionEstimate'|'i
     { id: '4', name: 'Anycubic Mega X', model: 'Mega X', codeName: 'ANYC01', location: 'Workshop', technology: 'FDM', initializationDate: new Date('2021-06-01'), capacity: 'Large', material: 'PETG', status: 'Maintenance' },
     { id: '5', name: 'Bambu Lab A1 mini', model: 'A1 mini', codeName: 'BAMBU01', location: 'Lab 3', technology: 'FDM', initializationDate: new Date('2023-08-18'), capacity: 'Small', material: 'PLA', status: 'Printing' },
     { id: '6', name: 'Prusa MINI+', model: 'MINI+', codeName: 'PRUSA02', location: 'Lab 1', technology: 'FDM', initializationDate: new Date('2023-09-30'), capacity: 'Small', material: 'PLA', status: 'Online' },
-    { id: '7', name: 'EOS Formiga P 110', model: 'P 110', codeName: 'EOS01', location: 'Lab 2', technology: 'SLS', initializationDate: new Date('2023-11-01'), capacity: 'Medium', material: 'PA 2200', status: 'Online' },
+    { 
+        id: '7', 
+        name: 'EOS Formiga P 110', 
+        model: 'P 110', 
+        codeName: 'EOS01', 
+        location: 'Lab 2', 
+        technology: 'SLS', 
+        initializationDate: new Date('2023-11-01'), 
+        capacity: 'Medium', 
+        material: 'PA 2200', 
+        status: 'Online',
+        buildChambers: [
+            { id: 'CH-EOS01-01', status: 'Installed', temperature: 180, targetTemperature: 40, partsCount: 45, powderLevel: 85 },
+            { id: 'CH-EOS01-02', status: 'Cooling', printCompletionTime: new Date(Date.now() - 3600000).toISOString(), cooldownStartTime: new Date(Date.now() - 3600000).toISOString(), temperature: 95, targetTemperature: 40, partsCount: 38, powderLevel: 90 },
+            { id: 'CH-EOS01-03', status: 'Ready', powderLevel: 100 }
+        ],
+        activeChamberId: 'CH-EOS01-01',
+        chamberSwapEnabled: true,
+        powderCleanupEnabled: true,
+        opticalCleaningEnabled: false,
+        irSensorCleaningEnabled: false,
+        toolChangeSystem: {
+            availableTools: ['Servo Gripper', 'Mechanical Fork', 'Vacuum Attachment'],
+            currentTool: 'Servo Gripper',
+            toolChangeTime: 45
+        },
+        automationStatus: {
+            cycleState: 'Printing',
+            nextAction: 'Complete Print Job',
+            estimatedNextActionTime: new Date(Date.now() + 7200000).toISOString(),
+            consecutivePrintsCompleted: 12,
+            lastMaintenanceCycle: new Date(Date.now() - 86400000).toISOString()
+        }
+    },
     { id: '8', name: 'HP Jet Fusion 5200', model: '5200', codeName: 'HPJF01', location: 'Prototyping Center', technology: 'MJF', initializationDate: new Date('2023-07-15'), capacity: 'Production', material: 'HP 3D HR PA 12', status: 'Maintenance' },
     { id: '9', name: 'Creality K1', model: 'K1', codeName: 'CREA02', location: 'Lab 1', technology: 'FDM', initializationDate: new Date('2024-01-20'), capacity: 'Standard', material: 'ABS', status: 'Offline' },
-    { id: '10', name: 'Formlabs Fuse 1', model: 'Fuse 1', codeName: 'FUSE01', location: 'SLS Room', technology: 'SLS', initializationDate: new Date('2024-02-10'), capacity: 'Standard', material: 'Nylon 12', status: 'Online' },
+    { 
+        id: '10', 
+        name: 'Formlabs Fuse 1+ 30W', 
+        model: 'Fuse 1+ 30W', 
+        codeName: 'FUSE01', 
+        location: 'SLS Room', 
+        technology: 'SLS', 
+        initializationDate: new Date('2024-02-10'), 
+        capacity: 'Standard', 
+        material: 'Nylon 12 Powder', 
+        status: 'Online',
+        buildChambers: [
+            { id: 'CH-FUSE01-01', status: 'Installed', temperature: 165, targetTemperature: 35, partsCount: 28, powderLevel: 78 },
+            { id: 'CH-FUSE01-02', status: 'Cooling', printCompletionTime: new Date(Date.now() - 5400000).toISOString(), cooldownStartTime: new Date(Date.now() - 5400000).toISOString(), temperature: 68, targetTemperature: 35, partsCount: 32, powderLevel: 82 },
+            { id: 'CH-FUSE01-03', status: 'Ready', powderLevel: 100 }
+        ],
+        activeChamberId: 'CH-FUSE01-01',
+        chamberSwapEnabled: true,
+        powderCleanupEnabled: true,
+        opticalCleaningEnabled: true,
+        irSensorCleaningEnabled: true,
+        toolChangeSystem: {
+            availableTools: ['Servo Gripper', 'Mechanical Fork', 'Vacuum Attachment', 'Optical Cleaner', 'IR Sensor Cleaner'],
+            currentTool: 'Vacuum Attachment',
+            toolChangeTime: 30
+        },
+        automationStatus: {
+            cycleState: 'Cleaning Powder',
+            nextAction: 'Swap Build Chamber',
+            estimatedNextActionTime: new Date(Date.now() + 900000).toISOString(),
+            consecutivePrintsCompleted: 24,
+            lastMaintenanceCycle: new Date(Date.now() - 43200000).toISOString()
+        }
+    },
     { id: '11', name: 'Raise3D Pro3', model: 'Pro3', codeName: 'RAISE01', location: 'Lab 3', technology: 'FDM', initializationDate: new Date('2023-12-12'), capacity: 'Large', material: 'PC', status: 'Offline' },
     { id: '12', name: 'Anycubic Photon M3', model: 'M3', codeName: 'ANYC02', location: 'Design Studio', technology: 'SLA', initializationDate: new Date('2024-03-01'), capacity: 'Small', material: 'Standard Resin', status: 'Online' },
 ];

@@ -70,7 +70,7 @@ interface Task {
   id: string;
   robotId: string;
   printerId: string;
-  taskType: 'PART_REMOVAL' | 'BED_PREP' | 'INSPECTION' | 'MATERIAL_LOAD';
+  taskType: RobotTaskType;
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   priority: number;
   createdAt: string;
@@ -78,6 +78,25 @@ interface Task {
   completedAt?: string;
   errorMessage?: string;
 }
+
+export type RobotTaskType = 
+  // Generic FDM tasks
+  | 'PART_REMOVAL' 
+  | 'BED_PREP' 
+  | 'INSPECTION' 
+  | 'MATERIAL_LOAD'
+  // SLA/Dental specific tasks
+  | 'BUILD_PLATFORM_REMOVAL'
+  | 'DOOR_OPEN'
+  | 'DOOR_CLOSE'
+  | 'BASKET_TRANSFER'
+  | 'WASH_LOAD'
+  | 'WASH_UNLOAD'
+  | 'CURE_LOAD'
+  | 'CURE_UNLOAD'
+  | 'DENTAL_MODEL_INSPECTION'
+  | 'PLATFORM_CLEANING'
+  | 'RESIN_REFILL';
 
 interface QueueStatus {
   pending: number;
@@ -93,6 +112,10 @@ interface RobotConfig {
   protocol: 'MODBUS_TCP' | 'OPC_UA' | 'REST_API';
   stationId: string;
   isActive: boolean;
+  // SLA/Dental specific
+  supportedPrinters?: string[];
+  hasCustomGripper?: boolean;
+  gripperType?: 'BUILD_PLATFORM' | 'BASKET' | 'UNIVERSAL';
 }
 
 export function RobotDashboard() {
@@ -120,7 +143,7 @@ export function RobotDashboard() {
   const [newTask, setNewTask] = useState({
     robotId: '',
     printerId: '',
-    taskType: 'PART_REMOVAL' as const,
+    taskType: 'BUILD_PLATFORM_REMOVAL' as RobotTaskType,
     priority: 5,
   });
 
@@ -320,6 +343,7 @@ export function RobotDashboard() {
   };
 
   const getTaskTypeColor = (type: Task['taskType']) => {
+    // FDM tasks
     switch (type) {
       case 'PART_REMOVAL':
         return 'text-blue-500';
@@ -329,6 +353,29 @@ export function RobotDashboard() {
         return 'text-purple-500';
       case 'MATERIAL_LOAD':
         return 'text-orange-500';
+      
+      // SLA/Dental tasks
+      case 'BUILD_PLATFORM_REMOVAL':
+        return 'text-cyan-500';
+      case 'DOOR_OPEN':
+      case 'DOOR_CLOSE':
+        return 'text-gray-500';
+      case 'BASKET_TRANSFER':
+        return 'text-indigo-500';
+      case 'WASH_LOAD':
+      case 'WASH_UNLOAD':
+        return 'text-blue-400';
+      case 'CURE_LOAD':
+      case 'CURE_UNLOAD':
+        return 'text-amber-500';
+      case 'DENTAL_MODEL_INSPECTION':
+        return 'text-pink-500';
+      case 'PLATFORM_CLEANING':
+        return 'text-teal-500';
+      case 'RESIN_REFILL':
+        return 'text-violet-500';
+      default:
+        return 'text-gray-500';
     }
   };
 
@@ -522,10 +569,24 @@ export function RobotDashboard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="PART_REMOVAL">Part Removal</SelectItem>
-                      <SelectItem value="BED_PREP">Bed Preparation</SelectItem>
-                      <SelectItem value="INSPECTION">Inspection</SelectItem>
-                      <SelectItem value="MATERIAL_LOAD">Material Load</SelectItem>
+                      {/* FDM Tasks */}
+                      <SelectItem value="PART_REMOVAL">Part Removal (FDM)</SelectItem>
+                      <SelectItem value="BED_PREP">Bed Preparation (FDM)</SelectItem>
+                      <SelectItem value="INSPECTION">Inspection (FDM)</SelectItem>
+                      <SelectItem value="MATERIAL_LOAD">Material Load (FDM)</SelectItem>
+                      
+                      {/* SLA/Dental Tasks */}
+                      <SelectItem value="BUILD_PLATFORM_REMOVAL">Build Platform Removal (SLA)</SelectItem>
+                      <SelectItem value="DOOR_OPEN">Open Printer Door</SelectItem>
+                      <SelectItem value="DOOR_CLOSE">Close Printer Door</SelectItem>
+                      <SelectItem value="BASKET_TRANSFER">Basket Transfer</SelectItem>
+                      <SelectItem value="WASH_LOAD">Load Wash Station</SelectItem>
+                      <SelectItem value="WASH_UNLOAD">Unload Wash Station</SelectItem>
+                      <SelectItem value="CURE_LOAD">Load Cure Station</SelectItem>
+                      <SelectItem value="CURE_UNLOAD">Unload Cure Station</SelectItem>
+                      <SelectItem value="DENTAL_MODEL_INSPECTION">Dental Model Inspection</SelectItem>
+                      <SelectItem value="PLATFORM_CLEANING">Platform Cleaning</SelectItem>
+                      <SelectItem value="RESIN_REFILL">Resin Refill</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

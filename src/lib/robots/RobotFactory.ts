@@ -259,6 +259,7 @@ export class RobotFactory {
     let response: RobotResponse;
 
     switch (task.taskType) {
+      // FDM tasks
       case 'PART_REMOVAL':
         response = await robot.removePart(task.printerId, task.parameters);
         break;
@@ -271,6 +272,44 @@ export class RobotFactory {
       case 'MATERIAL_LOAD':
         response = await robot.loadMaterial(task.printerId, task.parameters);
         break;
+      
+      // SLA/Dental specific tasks
+      case 'BUILD_PLATFORM_REMOVAL':
+        response = await robot.removeBuildPlatform(task.printerId, task.parameters);
+        break;
+      case 'DOOR_OPEN':
+        response = await robot.openDoor(task.printerId, task.parameters);
+        break;
+      case 'DOOR_CLOSE':
+        response = await robot.closeDoor(task.printerId, task.parameters);
+        break;
+      case 'BASKET_TRANSFER':
+        const fromStation = task.parameters?.fromStation || 'printer';
+        const toStation = task.parameters?.toStation || 'wash';
+        response = await robot.transferBasket(fromStation, toStation, task.parameters);
+        break;
+      case 'WASH_LOAD':
+        response = await robot.loadWash(task.parameters?.stationId || 'wash-1', task.parameters);
+        break;
+      case 'WASH_UNLOAD':
+        response = await robot.unloadWash(task.parameters?.stationId || 'wash-1', task.parameters);
+        break;
+      case 'CURE_LOAD':
+        response = await robot.loadCure(task.parameters?.stationId || 'cure-1', task.parameters);
+        break;
+      case 'CURE_UNLOAD':
+        response = await robot.unloadCure(task.parameters?.stationId || 'cure-1', task.parameters);
+        break;
+      case 'DENTAL_MODEL_INSPECTION':
+        response = await robot.inspectDentalModels(task.printerId, task.parameters);
+        break;
+      case 'PLATFORM_CLEANING':
+        response = await robot.cleanPlatform(task.printerId, task.parameters);
+        break;
+      case 'RESIN_REFILL':
+        response = await robot.refillResin(task.printerId, task.parameters);
+        break;
+        
       default:
         console.error(`[RobotFactory] Unknown task type: ${task.taskType}`);
         return;
