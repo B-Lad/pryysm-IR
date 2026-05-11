@@ -29,7 +29,7 @@ model User {
   image         String?
   role          String     @default("admin") // admin or master
   companyName   String?
-  numPrinters   String?
+  numPrinters   Int?       // Changed from String to Int for proper typing
   country       String?
   industry      String?
   avatar        String?
@@ -38,7 +38,6 @@ model User {
   
   accounts      Account[]
   sessions      Session[]
-  sessions_old  Session_Old[]
 }
 
 model Account {
@@ -71,15 +70,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Keep old Session model for backward compatibility
-model Session_Old {
-  id            String     @id @default(cuid())
-  sessionToken  String     @unique
-  userId        String
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expires       DateTime
-  createdAt     DateTime   @default(now())
-}
+// Old Session model removed - handle migrations via Prisma Migrate instead of maintaining ghost tables
 
 model VerificationToken {
   identifier String
@@ -251,10 +242,11 @@ model MaterialChangeRequest {
   priority      String   // low, medium, high, critical
   status        String   // pending, in_progress, completed, failed
   estimatedTime Int?     // in minutes
+  spoolId       String?  // Foreign key to FilamentSpool
   createdAt     DateTime @default(now())
   completedAt   DateTime?
 
-  spool         FilamentSpool? @relation(fields: [requestedMaterial], references: [material])
+  spool         FilamentSpool? @relation(fields: [spoolId], references: [id])
 
   @@index([status])
   @@index([priority])
