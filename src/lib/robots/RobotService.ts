@@ -5,9 +5,7 @@
 
 import { robotFactory } from './RobotFactory';
 import { RobotConfig, RobotTask, RobotStatus } from './types';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/src/lib/prisma';
 
 export class RobotService {
   /**
