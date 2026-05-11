@@ -24,7 +24,7 @@ export interface User {
     email: string;
     role: 'admin' | 'master';
     companyName?: string;
-    numPrinters?: string;
+    numPrinters?: number | null;
     country?: string;
     industry?: string;
     avatar?: string;
@@ -238,7 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email: apiUser.email,
                 role: apiUser.role === 'master' ? 'master' : 'admin',
                 companyName: apiUser.companyName,
-                numPrinters: apiUser.numPrinters?.toString() || undefined,
+                numPrinters: apiUser.numPrinters,
                 country: apiUser.country,
                 industry: apiUser.industry,
                 avatar: apiUser.avatar,
