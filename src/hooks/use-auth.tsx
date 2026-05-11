@@ -201,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('🔐 Login attempt:', email);
         
         try {
-            // Call login API
+            // Call login API - credentials are validated server-side, never client-side
             console.log('📤 Sending login request to /api/auth/login...');
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -238,7 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email: apiUser.email,
                 role: apiUser.role === 'master' ? 'master' : 'admin',
                 companyName: apiUser.companyName,
-                numPrinters: apiUser.numPrinters,
+                numPrinters: apiUser.numPrinters?.toString() || undefined,
                 country: apiUser.country,
                 industry: apiUser.industry,
                 avatar: apiUser.avatar,
@@ -251,14 +251,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return navigateResult;
         } catch (error) {
             console.error('❌ Login error:', error);
-            // Fallback: Try demo account for backward compatibility
-            if (email === 'demo@prysm.com' && pass === 'demo123') {
-                console.log('✅ Demo user credentials matched (fallback)');
-                const userToLogin: User = { name: 'Demo User', email, role: 'admin' };
-                const result = handleUser(userToLogin);
-                const navigateResult = navigateAfterLogin(result);
-                return navigateResult;
-            }
+            // Removed insecure client-side credential fallback
+            // All authentication must go through secure API endpoints
             return false;
         }
     };

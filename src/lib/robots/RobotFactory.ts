@@ -217,7 +217,7 @@ export class RobotFactory {
   }
 
   /**
-   * Update task status in database
+   * Update task status in database using singleton Prisma client
    */
   private async updateTaskStatus(
     taskId: string, 
@@ -225,8 +225,8 @@ export class RobotFactory {
     errorMessage?: string
   ): Promise<void> {
     try {
-      const { PrismaClient } = await import('@prisma/client');
-      const prisma = new PrismaClient();
+      // Use the shared singleton Prisma client instead of creating new instances
+      const { prisma } = await import('@/lib/prisma');
       
       await prisma.robotTask.update({
         where: { id: taskId },
@@ -237,8 +237,6 @@ export class RobotFactory {
           ...(errorMessage ? { errorMessage } : {})
         }
       });
-      
-      await prisma.$disconnect();
     } catch (error) {
       console.error(`[RobotFactory] Failed to update task ${taskId} status:`, error);
     }
