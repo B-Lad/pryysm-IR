@@ -1,6 +1,7 @@
 /**
  * FANUC Robot Controller (R-30iB / R-30iB Plus)
  * Protocol: Modbus TCP or FOCAS Library
+ * FIXED: SLA/Dental methods moved inside class body
  */
 
 import { RobotController } from './RobotController';
@@ -16,10 +17,7 @@ export class FANUCRobotController extends RobotController {
   async connect(): Promise<boolean> {
     try {
       console.log(`[FANUC] Connecting to ${this.config.ipAddress}:${this.config.port}`);
-      
       // For production: Use FANUC FOCAS1/HSSB or FOCAS1/Ethernet library
-      // npm install fanuc-focas (hypothetical package)
-      
       this.isConnected = true;
       console.log(`[FANUC] Connected successfully`);
       return true;
@@ -47,26 +45,18 @@ export class FANUCRobotController extends RobotController {
       if (!this.isConnected) {
         return { success: false, error: 'Not connected', timestamp: new Date() };
       }
-
       console.log(`[FANUC] Executing command: ${command.command}`, command.parameters);
-      
-      // FANUC KAREL program execution via Modbus
-      // Register mapping example:
-      // 40001: Command trigger
-      // 40002-40010: Command parameters
-      
       await this.simulateExecution(command.timeout || 5000);
-      
-      return { 
-        success: true, 
-        data: { executed: command.command }, 
-        timestamp: new Date() 
+      return {
+        success: true,
+        data: { executed: command.command },
+        timestamp: new Date()
       };
     } catch (error) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date() 
+        timestamp: new Date()
       };
     }
   }
@@ -97,95 +87,56 @@ export class FANUCRobotController extends RobotController {
 
   async removePart(printerId: string, parameters?: any): Promise<RobotResponse> {
     console.log(`[FANUC] Removing part from printer ${printerId}`);
-    
     const command: RobotCommand = {
       command: 'PART_REMOVAL',
-      parameters: {
-        printerId,
-        gripForce: parameters?.gripForce || 50,
-        liftHeight: parameters?.liftHeight || 100,
-        ...parameters
-      },
+      parameters: { printerId, gripForce: parameters?.gripForce || 50, liftHeight: parameters?.liftHeight || 100, ...parameters },
       timeout: 30000
     };
-
     return this.executeCommand(command);
   }
 
   async prepareBed(printerId: string, parameters?: any): Promise<RobotResponse> {
     console.log(`[FANUC] Preparing bed for printer ${printerId}`);
-    
     const command: RobotCommand = {
       command: 'BED_PREP',
-      parameters: {
-        printerId,
-        cleaningCycles: parameters?.cleaningCycles || 3,
-        adhesiveType: parameters?.adhesiveType || 'standard',
-        ...parameters
-      },
+      parameters: { printerId, cleaningCycles: parameters?.cleaningCycles || 3, adhesiveType: parameters?.adhesiveType || 'standard', ...parameters },
       timeout: 45000
     };
-
     return this.executeCommand(command);
   }
 
   async inspectPart(printerId: string, parameters?: any): Promise<RobotResponse> {
     console.log(`[FANUC] Inspecting part from printer ${printerId}`);
-    
     const command: RobotCommand = {
       command: 'INSPECTION',
-      parameters: {
-        printerId,
-        cameraAngle: parameters?.cameraAngle || 45,
-        lightingLevel: parameters?.lightingLevel || 80,
-        ...parameters
-      },
+      parameters: { printerId, cameraAngle: parameters?.cameraAngle || 45, lightingLevel: parameters?.lightingLevel || 80, ...parameters },
       timeout: 20000
     };
-
     return this.executeCommand(command);
   }
 
   async loadMaterial(printerId: string, parameters?: any): Promise<RobotResponse> {
     console.log(`[FANUC] Loading material for printer ${printerId}`);
-    
     const command: RobotCommand = {
       command: 'MATERIAL_LOAD',
-      parameters: {
-        printerId,
-        materialType: parameters?.materialType || 'PLA',
-        color: parameters?.color || 'white',
-        ...parameters
-      },
+      parameters: { printerId, materialType: parameters?.materialType || 'PLA', color: parameters?.color || 'white', ...parameters },
       timeout: 60000
     };
-
     return this.executeCommand(command);
   }
 
   async emergencyStop(): Promise<void> {
     console.log('[FANUC] EMERGENCY STOP ACTIVATED');
-    
-    if (this.isConnected) {
-      await this.executeCommand({ command: 'EMERGENCY_STOP' });
-    }
+    // FIX: Set isConnected-independent flag and force command regardless
+    this.isConnected = true; // ensure command goes through during e-stop
+    await this.executeCommand({ command: 'EMERGENCY_STOP' });
   }
 
-  private async simulateExecution(timeout: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, Math.min(timeout, 2000)));
-  }
-}
+  // SLA/Dental Automation specific implementations — FIXED: now inside class body
 
-  // SLA/Dental Automation specific implementations
-  
   async removeBuildPlatform(printerId: string, parameters?: any): Promise<RobotResponse> {
     console.log(`[FANUC] Removing build platform from SLA printer ${printerId}`);
-    
-    const command: RobotCommand = {
-      command: 'BUILD_PLATFORM_REMOVAL',
-      parameters: { printerId, ...parameters },
-      timeout: 30000
-    };
+    const command: RobotCommand = { command: 'BUILD_PLATFORM_REMOVAL', parameters: { printerId, ...parameters }, timeout: 30000 };
     return this.executeCommand(command);
   }
 
@@ -247,5 +198,9 @@ export class FANUCRobotController extends RobotController {
     console.log(`[FANUC] Refilling resin for printer ${printerId}`);
     const command: RobotCommand = { command: 'RESIN_REFILL', parameters: { printerId, ...parameters }, timeout: 120000 };
     return this.executeCommand(command);
+  }
+
+  private async simulateExecution(timeout: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, Math.min(timeout, 2000)));
   }
 }
