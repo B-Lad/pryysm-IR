@@ -214,6 +214,15 @@ export interface Powder {
     minStock: number;
     minOrder: number;
     location?: string;
+    // SLS-specific properties
+    batchNumber?: string;
+    recyclingCount?: number; // Number of times powder has been recycled
+    maxRecyclingCount?: number; // Maximum allowed recycling cycles
+    particleSize?: string; // e.g., "50μm"
+    flowRate?: string; // Powder flow characteristics
+    moistureContent?: number; // Percentage
+    lastSieved?: string; // Date of last sieving
+    contaminationLevel?: 'Clean' | 'Low' | 'Medium' | 'High';
 }
 
 export interface Printer {
@@ -246,6 +255,34 @@ export interface Printer {
         name: string;
         progress: number;
         timeRemaining: string;
+    };
+    // SLS-specific properties (Formlabs Fuse 1+ automation)
+    buildChambers?: {
+        id: string;
+        status: 'Installed' | 'Cooling' | 'Ready' | 'In Post-Processing' | 'Cleaning';
+        printCompletionTime?: string;
+        cooldownStartTime?: string;
+        temperature?: number; // Current chamber temperature in °C
+        targetTemperature?: number; // Target safe handling temperature
+        partsCount?: number; // Number of parts in chamber
+        powderLevel?: number; // Percentage of powder remaining
+    }[];
+    activeChamberId?: string; // Currently installed chamber
+    chamberSwapEnabled?: boolean; // Automated chamber swap capability
+    powderCleanupEnabled?: boolean; // Automated powder cleanup capability
+    opticalCleaningEnabled?: boolean; // Automated optical cassette cleaning
+    irSensorCleaningEnabled?: boolean; // Automated IR sensor cleaning
+    toolChangeSystem?: {
+        availableTools: ('Servo Gripper' | 'Mechanical Fork' | 'Vacuum Attachment' | 'Optical Cleaner' | 'IR Sensor Cleaner')[];
+        currentTool?: string;
+        toolChangeTime?: number; // Time in seconds to change tools
+    };
+    automationStatus?: {
+        cycleState: 'Idle' | 'Printing' | 'Cooling' | 'Swapping Chamber' | 'Cleaning Powder' | 'Cleaning Optics' | 'Error';
+        nextAction?: string;
+        estimatedNextActionTime?: string;
+        consecutivePrintsCompleted?: number;
+        lastMaintenanceCycle?: string;
     };
 }
 

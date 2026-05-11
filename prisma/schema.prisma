@@ -176,3 +176,87 @@ model RobotEvent {
   @@index([timestamp])
   @@index([eventType])
 }
+
+// Filament Management for Lights-Out 3D Printing
+model FilamentSpool {
+  id            String   @id @default(cuid())
+  material      String   // PLA, PETG, ABS, TPU, Nylon, etc.
+  color         String
+  brand         String
+  diameter      Float    // in mm (1.75 or 2.85)
+  weight        Int      // in grams
+  remainingWeight Int    // in grams
+  location      String   // Storage slot location
+  status        String   // available, in_use, low, empty, reserved
+  moistureLevel Float?   // percentage
+  temperature   Float?   // in Celsius
+  installedDate DateTime?
+  expiryDate    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  dryerUnits    DryerUnit[]
+  storageSlots  StorageSlot[]
+  changeRequests MaterialChangeRequest[]
+
+  @@index([status])
+  @@index([material])
+  @@index([location])
+}
+
+// Filament Dryer Units
+model DryerUnit {
+  id            String   @id @default(cuid())
+  name          String
+  status        String   // idle, drying, cooling, error
+  currentSpoolId String?
+  targetTemperature Float
+  currentTemperature Float
+  humidity      Float    // percentage
+  timeRemaining Int?     // in minutes
+  lastMaintenance DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  currentSpool  FilamentSpool? @relation(fields: [currentSpoolId], references: [id])
+
+  @@index([status])
+}
+
+// Climate-Controlled Storage Slots
+model StorageSlot {
+  id            String   @id @default(cuid())
+  slotNumber    Int
+  spoolId       String?
+  isClimateControlled Boolean @default(true)
+  temperature   Float
+  humidity      Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  spool         FilamentSpool? @relation(fields: [spoolId], references: [id])
+
+  @@unique([slotNumber])
+  @@index([spoolId])
+}
+
+// Material Change Requests
+model MaterialChangeRequest {
+  id            String   @id @default(cuid())
+  printerId     String
+  printerName   String
+  currentMaterial String
+  requestedMaterial String
+  color         String
+  priority      String   // low, medium, high, critical
+  status        String   // pending, in_progress, completed, failed
+  estimatedTime Int?     // in minutes
+  createdAt     DateTime @default(now())
+  completedAt   DateTime?
+
+  spool         FilamentSpool? @relation(fields: [requestedMaterial], references: [material])
+
+  @@index([status])
+  @@index([priority])
+  @@index([printerId])
+}

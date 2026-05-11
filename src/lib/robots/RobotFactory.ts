@@ -11,18 +11,31 @@ import { YaskawaRobotController } from './YaskawaRobotController';
 import { KUKARobotController } from './KUKARobotController';
 
 export class RobotFactory {
-  private static instance: RobotFactory;
+  private static instance: RobotFactory | null = null;
   private robots: Map<string, RobotController> = new Map();
   private taskQueue: RobotTask[] = [];
   private isProcessing: boolean = false;
+  private processingLock: boolean = false;
+  private maxRetries: number = 3;
+  private defaultTimeout: number = 30000; // 30 seconds
 
   private constructor() {}
 
+  /**
+   * Thread-safe singleton instance getter
+   */
   static getInstance(): RobotFactory {
     if (!RobotFactory.instance) {
       RobotFactory.instance = new RobotFactory();
     }
     return RobotFactory.instance;
+  }
+
+  /**
+   * Reset instance (for testing/serverless environments)
+   */
+  static resetInstance(): void {
+    RobotFactory.instance = null;
   }
 
   /**
@@ -115,39 +128,120 @@ export class RobotFactory {
   }
 
   /**
-   * Add task to queue
+   * Add task to queue with priority support
    */
   addTask(task: RobotTask): void {
-    this.taskQueue.push(task);
-    console.log(`[RobotFactory] Task added to queue: ${task.id}`);
+    // Insert task based on priority (lower number = higher priority)
+    const insertIndex = this.taskQueue.findIndex(
+      t => (t.priority ?? 5) > (task.priority ?? 5)
+    );
     
-    if (!this.isProcessing) {
+    if (insertIndex === -1) {
+      this.taskQueue.push(task);
+    } else {
+      this.taskQueue.splice(insertIndex, 0, task);
+    }
+    
+    console.log(`[RobotFactory] Task added to queue: ${task.id} (priority: ${task.priority})`);
+    
+    if (!this.isProcessing && !this.processingLock) {
       this.processQueue();
     }
   }
 
   /**
-   * Process task queue
+   * Clear all pending tasks from queue (used for emergency stop)
+   */
+  clearQueue(): void {
+    this.taskQueue = [];
+    console.log('[RobotFactory] Task queue cleared');
+  }
+
+  /**
+   * Process task queue with improved concurrency control
    */
   private async processQueue(): Promise<void> {
-    if (this.isProcessing || this.taskQueue.length === 0) {
+    if (this.isProcessing || this.taskQueue.length === 0 || this.processingLock) {
       return;
     }
 
+    this.processingLock = true;
     this.isProcessing = true;
 
-    while (this.taskQueue.length > 0) {
-      const task = this.taskQueue.shift();
-      if (!task) continue;
+    try {
+      while (this.taskQueue.length > 0) {
+        const task = this.taskQueue.shift();
+        if (!task) continue;
 
-      try {
-        await this.executeTask(task);
-      } catch (error) {
-        console.error(`[RobotFactory] Task ${task.id} failed:`, error);
+        try {
+          await this.executeTaskWithRetry(task);
+        } catch (error) {
+          console.error(`[RobotFactory] Task ${task.id} failed after retries:`, error);
+          // Update task status to FAILED in database
+          await this.updateTaskStatus(task.id, 'FAILED', error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
+    } finally {
+      this.isProcessing = false;
+      this.processingLock = false;
+      
+      // Process any new tasks that were added while processing
+      if (this.taskQueue.length > 0) {
+        setImmediate(() => this.processQueue());
       }
     }
+  }
 
-    this.isProcessing = false;
+  /**
+   * Execute task with retry logic and timeout
+   */
+  private async executeTaskWithRetry(task: RobotTask): Promise<void> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        await this.executeTask(task);
+        return; // Success, exit retry loop
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`[RobotFactory] Task ${task.id} attempt ${attempt}/${this.maxRetries} failed:`, lastError.message);
+        
+        if (attempt < this.maxRetries) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+      }
+    }
+    
+    throw lastError;
+  }
+
+  /**
+   * Update task status in database
+   */
+  private async updateTaskStatus(
+    taskId: string, 
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED',
+    errorMessage?: string
+  ): Promise<void> {
+    try {
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      await prisma.robotTask.update({
+        where: { id: taskId },
+        data: { 
+          status,
+          ...(status === 'IN_PROGRESS' ? { startedAt: new Date() } : {}),
+          ...(status === 'COMPLETED' || status === 'FAILED' ? { completedAt: new Date() } : {}),
+          ...(errorMessage ? { errorMessage } : {})
+        }
+      });
+      
+      await prisma.$disconnect();
+    } catch (error) {
+      console.error(`[RobotFactory] Failed to update task ${taskId} status:`, error);
+    }
   }
 
   /**
@@ -165,6 +259,7 @@ export class RobotFactory {
     let response: RobotResponse;
 
     switch (task.taskType) {
+      // FDM tasks
       case 'PART_REMOVAL':
         response = await robot.removePart(task.printerId, task.parameters);
         break;
@@ -177,6 +272,44 @@ export class RobotFactory {
       case 'MATERIAL_LOAD':
         response = await robot.loadMaterial(task.printerId, task.parameters);
         break;
+      
+      // SLA/Dental specific tasks
+      case 'BUILD_PLATFORM_REMOVAL':
+        response = await robot.removeBuildPlatform(task.printerId, task.parameters);
+        break;
+      case 'DOOR_OPEN':
+        response = await robot.openDoor(task.printerId, task.parameters);
+        break;
+      case 'DOOR_CLOSE':
+        response = await robot.closeDoor(task.printerId, task.parameters);
+        break;
+      case 'BASKET_TRANSFER':
+        const fromStation = task.parameters?.fromStation || 'printer';
+        const toStation = task.parameters?.toStation || 'wash';
+        response = await robot.transferBasket(fromStation, toStation, task.parameters);
+        break;
+      case 'WASH_LOAD':
+        response = await robot.loadWash(task.parameters?.stationId || 'wash-1', task.parameters);
+        break;
+      case 'WASH_UNLOAD':
+        response = await robot.unloadWash(task.parameters?.stationId || 'wash-1', task.parameters);
+        break;
+      case 'CURE_LOAD':
+        response = await robot.loadCure(task.parameters?.stationId || 'cure-1', task.parameters);
+        break;
+      case 'CURE_UNLOAD':
+        response = await robot.unloadCure(task.parameters?.stationId || 'cure-1', task.parameters);
+        break;
+      case 'DENTAL_MODEL_INSPECTION':
+        response = await robot.inspectDentalModels(task.printerId, task.parameters);
+        break;
+      case 'PLATFORM_CLEANING':
+        response = await robot.cleanPlatform(task.printerId, task.parameters);
+        break;
+      case 'RESIN_REFILL':
+        response = await robot.refillResin(task.printerId, task.parameters);
+        break;
+        
       default:
         console.error(`[RobotFactory] Unknown task type: ${task.taskType}`);
         return;
@@ -204,11 +337,15 @@ export class RobotFactory {
   }
 
   /**
-   * Emergency stop all robots
+   * Emergency stop all robots - clears queue and stops all robots
    */
   async emergencyStopAll(): Promise<void> {
     console.log('[RobotFactory] EMERGENCY STOP - All robots');
     
+    // Clear pending tasks from queue
+    this.clearQueue();
+    
+    // Stop all robots
     for (const [, robot] of this.robots) {
       await robot.emergencyStop();
     }

@@ -176,6 +176,195 @@ export class ABBRobotController extends RobotController {
     }
   }
 
+  // SLA/Dental Automation specific implementations
+  
+  async removeBuildPlatform(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Removing build platform from SLA printer ${printerId}`);
+    
+    const command: RobotCommand = {
+      command: 'BUILD_PLATFORM_REMOVAL',
+      parameters: {
+        printerId,
+        gripForce: parameters?.gripForce || 60,
+        liftHeight: parameters?.liftHeight || 150,
+        tiltAngle: parameters?.tiltAngle || 0,
+        ...parameters
+      },
+      timeout: 30000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async openDoor(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Opening door for printer ${printerId}`);
+    
+    const command: RobotCommand = {
+      command: 'DOOR_OPEN',
+      parameters: {
+        printerId,
+        doorType: parameters?.doorType || 'front',
+        ...parameters
+      },
+      timeout: 15000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async closeDoor(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Closing door for printer ${printerId}`);
+    
+    const command: RobotCommand = {
+      command: 'DOOR_CLOSE',
+      parameters: {
+        printerId,
+        doorType: parameters?.doorType || 'front',
+        ...parameters
+      },
+      timeout: 15000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async transferBasket(fromStation: string, toStation: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Transferring basket from ${fromStation} to ${toStation}`);
+    
+    const command: RobotCommand = {
+      command: 'BASKET_TRANSFER',
+      parameters: {
+        fromStation,
+        toStation,
+        basketId: parameters?.basketId,
+        partCount: parameters?.partCount,
+        ...parameters
+      },
+      timeout: 45000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async loadWash(stationId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Loading basket into wash station ${stationId}`);
+    
+    const command: RobotCommand = {
+      command: 'WASH_LOAD',
+      parameters: {
+        stationId,
+        washDuration: parameters?.washDuration || 600,
+        agitationSpeed: parameters?.agitationSpeed || 'medium',
+        ...parameters
+      },
+      timeout: 30000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async unloadWash(stationId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Unloading basket from wash station ${stationId}`);
+    
+    const command: RobotCommand = {
+      command: 'WASH_UNLOAD',
+      parameters: {
+        stationId,
+        dripTime: parameters?.dripTime || 30,
+        ...parameters
+      },
+      timeout: 20000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async loadCure(stationId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Loading basket into cure station ${stationId}`);
+    
+    const command: RobotCommand = {
+      command: 'CURE_LOAD',
+      parameters: {
+        stationId,
+        cureTime: parameters?.cureTime || 1800,
+        uvIntensity: parameters?.uvIntensity || 100,
+        temperature: parameters?.temperature || 60,
+        ...parameters
+      },
+      timeout: 30000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async unloadCure(stationId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Unloading basket from cure station ${stationId}`);
+    
+    const command: RobotCommand = {
+      command: 'CURE_UNLOAD',
+      parameters: {
+        stationId,
+        coolDownTime: parameters?.coolDownTime || 60,
+        ...parameters
+      },
+      timeout: 20000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async inspectDentalModels(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Inspecting dental models from printer ${printerId}`);
+    
+    const command: RobotCommand = {
+      command: 'DENTAL_MODEL_INSPECTION',
+      parameters: {
+        printerId,
+        inspectionType: parameters?.inspectionType || 'dimensional',
+        cameraResolution: parameters?.cameraResolution || 'high',
+        toleranceThreshold: parameters?.toleranceThreshold || 0.1,
+        ...parameters
+      },
+      timeout: 60000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async cleanPlatform(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Cleaning build platform for printer ${printerId}`);
+    
+    const command: RobotCommand = {
+      command: 'PLATFORM_CLEANING',
+      parameters: {
+        printerId,
+        cleaningMethod: parameters?.cleaningMethod || 'scrape',
+        solventType: parameters?.solventType || 'IPA',
+        ...parameters
+      },
+      timeout: 45000
+    };
+
+    return this.executeCommand(command);
+  }
+
+  async refillResin(printerId: string, parameters?: any): Promise<RobotResponse> {
+    console.log(`[ABB] Refilling resin for printer ${printerId}`);
+    
+    const command: RobotCommand = {
+      command: 'RESIN_REFILL',
+      parameters: {
+        printerId,
+        resinType: parameters?.resinType || 'dental_model',
+        targetLevel: parameters?.targetLevel || 90,
+        ...parameters
+      },
+      timeout: 120000
+    };
+
+    return this.executeCommand(command);
+  }
+
   private async simulateExecution(timeout: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, Math.min(timeout, 2000)));
   }
