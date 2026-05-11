@@ -1,0 +1,178 @@
+
+// Database provider can be:
+// - "sqlite" for local development (DATABASE_URL="file:./prisma/dev.db")
+// - "sqlserver" for production on Azure (DATABASE_URL from GitHub Secret)
+// See .env.local for development, .env.production for production
+
+// FOR PRODUCTION ON AZURE - ACTIVE:
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// FOR LOCAL DEVELOPMENT - UNCOMMENT THIS:
+// datasource db {
+//   provider = "sqlite"
+//   url      = env("DATABASE_URL")
+// }
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String?    @unique
+  name          String?
+  passwordHash  String?
+  emailVerified DateTime?
+  image         String?
+  role          String     @default("admin") // admin or master
+  companyName   String?
+  numPrinters   String?
+  country       String?
+  industry      String?
+  avatar        String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  accounts      Account[]
+  sessions      Session[]
+  sessions_old  Session_Old[]
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Keep old Session model for backward compatibility
+model Session_Old {
+  id            String     @id @default(cuid())
+  sessionToken  String     @unique
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires       DateTime
+  createdAt     DateTime   @default(now())
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Printer {
+  id        Int     @id @default(autoincrement())
+  name      String
+  status    String
+  ipAddress String?
+  location  String?
+  prints    PrintJob[]
+}
+
+model Material {
+  id       Int     @id @default(autoincrement())
+  name     String
+  type     String?
+  color    String?
+  quantity Float?
+  prints   PrintJob[]
+}
+
+model PrintJob {
+  id          Int       @id @default(autoincrement())
+  name        String
+  status      String
+  fileUrl     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  printer     Printer   @relation(fields: [printerId], references: [id])
+  printerId   Int
+  material    Material  @relation(fields: [materialId], references: [id])
+  materialId  Int
+}
+
+// Robot Configuration for 3D Print Farm Automation
+model RobotConfig {
+  id            String   @id @default(cuid())
+  name          String
+  vendor        String   // ABB, FANUC, YASKAWA, KUKA
+  model         String
+  ipAddress     String
+  port          Int
+  protocol      String   // MODBUS_TCP, OPC_UA, REST_API
+  stationId     String
+  isActive      Boolean  @default(true)
+  maxPayload    Float?
+  reach         Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tasks         RobotTask[]
+  events        RobotEvent[]
+}
+
+// Robot Task Management
+model RobotTask {
+  id            String   @id @default(cuid())
+  robotId       String
+  printerId     String
+  taskType      String   // PART_REMOVAL, BED_PREP, INSPECTION, MATERIAL_LOAD
+  status        String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  priority      Int      @default(5)
+  parameters    Json?
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  robot         RobotConfig @relation(fields: [robotId], references: [id])
+
+  @@index([robotId])
+  @@index([printerId])
+  @@index([status])
+}
+
+// Robot Events Logging
+model RobotEvent {
+  id            String   @id @default(cuid())
+  robotId       String
+  eventType     String   // CONNECTION, DISCONNECTION, TASK_START, TASK_COMPLETE, ERROR, EMERGENCY_STOP
+  message       String?
+  data          Json?
+  timestamp     DateTime @default(now())
+
+  robot         RobotConfig @relation(fields: [robotId], references: [id])
+
+  @@index([robotId])
+  @@index([timestamp])
+  @@index([eventType])
+}
