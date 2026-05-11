@@ -1,60 +1,79 @@
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
-*.class
-*.exe
-*.dll
-*.so
-*.a
-*.out
-
+```
 # Dependencies
 node_modules/
-venv/
-.venv/
-.env
-.env.local
-*.env.*
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
-
-# Editors
-.vscode/
-.idea/
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Distribution / packaging
+# Build outputs
 dist/
 build/
-*.tar.gz
-*.zip
+target/
 
-# OS generated files
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py.class
+.Python
+env/
+venv/
+.venv/
+.ENV
+.venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Coverage reports
+coverage/
+*.cover
+.hpc/
+.pytest_cache/
+.coverage*
+
+# Temporary files
+*.tmp
+*.temp
+*~
 .DS_Store
 Thumbs.db
 
-# Python specific
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-.venv/
-venv/
-ENV/
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# TypeScript/JavaScript build output
-*.js.map
-*.tsbuildinfo
-dist/
-build/
+# MyPy
+.mypy_cache/
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+```
